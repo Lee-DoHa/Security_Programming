@@ -1,5 +1,7 @@
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -32,10 +34,15 @@ public class HashTest  {
 				
 		byte out[] = hash.digest();
 		
+		
+		
+		
 		System.out.println("md  = " + Utils.toHexString(out)); // 해쉬함수 결과값을 출력함
 		
 	
 	}
+	
+
 
 	
 }
