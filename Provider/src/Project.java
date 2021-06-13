@@ -47,9 +47,10 @@ public class Project {
 			
 			hash.update(derivedKey);
 			hash.update(salt);
-			byte[] password_check = hash.digest();
 			
-			System.out.println(Utils.toHexString(password_check));
+			byte[] p_check = hash.digest();
+			byte[] password_check = new byte[16];
+			System.arraycopy(p_check, 0, password_check, 0, 16);
 			
 		    
 		    fos.write(salt);
@@ -83,37 +84,51 @@ public class Project {
 		IvParameterSpec iv = new IvParameterSpec(ivBytes);
 		Cipher cipher = null;
 		cipher =  Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
-
-		int BUF_SIZE = 1024; 
-		byte[] buffer = new byte[BUF_SIZE];
+ 
 	    FileInputStream fis = new FileInputStream(o_path);    // 복호화 할 파일 읽기
 	    FileOutputStream fos = new FileOutputStream(path); // 복호화 후, 출력할 파일
-	    int read = BUF_SIZE;
+	    
 		
 		if(mode.equals("dec")) {
+			File file = new File(o_path);
+		    File file2 = new File(path);
+		    long fileSize = file.length();
+		    long decSize;
+			
+			int BUF_SIZE = (int)fileSize/100*5; 
+			byte[] buffer = new byte[BUF_SIZE];
+			int read = BUF_SIZE;
+			
 			
 			cipher.init(Cipher.DECRYPT_MODE, key, iv);
 		
 			hash.update(derivedKey);
 			hash.update(salt);
-			byte[] password_check2 = hash.digest();
-			byte[] check = new byte[28];
 			
-			read = fis.read(check);   
+			byte[] p_check2 = hash.digest();
+			byte[] password_check2 = new byte[16];
+			System.arraycopy(p_check2, 0, password_check2, 0, 16);
+			
+			byte[] check = new byte[24];
+			read = fis.read(check);
+			byte[] check2 = new byte[16];
+			System.arraycopy(check, 8, check2, 0, 16);
 			
 			
-			System.out.println(Utils.toHexString(check));
-			System.out.println(Utils.toHexString(password_check2));
 			
-			
-		    while ((read = fis.read(buffer, 0, BUF_SIZE)) == BUF_SIZE) {   
-		 	    fos.write(cipher.update(buffer, 0, read));
-		    }
-		    fos.write(cipher.doFinal(buffer, 0, read));
-		    
-		    File file = new File(path);
-		    long fileSize = file.length();
-		    System.out.println(fileSize);
+			if(java.util.Arrays.equals(check2, password_check2)) {
+				while ((read = fis.read(buffer, 0, BUF_SIZE)) == BUF_SIZE) {   
+			 	    fos.write(cipher.update(buffer, 0, read));
+			 	    decSize = file2.length();
+			 	    System.out.println("복호화 진행률 = " + decSize + "/" + fileSize);
+			    }
+			    fos.write(cipher.doFinal(buffer, 0, read));
+			    System.out.println("복호화가 정상적으로 처리되었습니다!");
+			}
+			else {
+				System.out.println("비밀번호가 다릅니다!");
+			}
+
 		    
 		    fis.close();  // 다 읽었으니, stream close 진행
 		    fos.close(); // 출력 끝났으니, stream close 진행
@@ -157,9 +172,9 @@ public class Project {
 		
 		System.arraycopy(output, 0, keyBytes, 0, dkLen);
 
-		fileEnc(mode, salt, keyBytes, path, "enc");
+		fileEnc(mode, salt, keyBytes, path, "enc.enc");
 		
-		
+		//복호화 진행을 위해 모드와, 복호화 될 경로 입력받기
 		System.out.print("모드를 입력하세요 :  ");
 		mode = scanner.next();
 		
@@ -169,7 +184,7 @@ public class Project {
 		System.out.print("파일의 경로를 입력하세요 :  ");
 		String path2 = scanner.next();
 		
-		fileDec(mode, salt, keyBytes, path2, "enc");
+		fileDec(mode, salt, keyBytes, path2, "enc.enc");
 		
 		
 		
